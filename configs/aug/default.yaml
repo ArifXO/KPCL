@@ -1,0 +1,4 @@
+# @package _global_.aug
+mask_frac: 0.2      # fraction of features zeroed per view (feature masking)
+noise_std: 0.1      # Gaussian noise std added per view
+mixup_alpha: 0.0    # Beta(a,a) mixup strength; 0 = off (preserve sample identity for spec)

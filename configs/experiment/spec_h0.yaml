@@ -1,0 +1,10 @@
+# @package _global_.experiment
+# SPEC H0 (decision-grade, NOT smoke): short but real contrastive training.
+# Bounded for CPU: subsample train, cap steps/epoch. Multi-seed in the driver.
+is_smoke: false
+epochs: 25
+batch_size: 256
+max_steps_per_epoch: 40
+subsample_train: 4000   # cap train rows for spec speed (datasets smaller than this unchanged)
+probe_epochs: 150
+probe_lr: 0.01

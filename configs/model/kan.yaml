@@ -1,0 +1,13 @@
+# @package _global_.model
+type: kan
+hidden_dim: 128       # encoder hidden width (L=2 layers)
+embed_dim: 64         # head output = final contrastive embedding dim
+n_enc_layers: 2       # shallow: Jacobian rank decays with depth (pitfall 3)
+grid_size: 5          # G intervals -> G+spline_order basis functions per edge
+spline_order: 3       # cubic B-spline; exactly p+1=4 active basis per input
+grid_range: [-2.0, 2.0]
+# weight_decay >= 1e-4 REQUIRED: KAN partition-of-unity nullspace (pitfall 2)
+weight_decay: 1.0e-4
+lr: 1.0e-3
+# R1 param counts (encoder+head), from param_count.txt:
+#   yeast=339840  scene=559872  emotions=304128  mediamill=359424  bibtex=2336256

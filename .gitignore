@@ -1,0 +1,75 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build and packaging artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Test and coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Experiment outputs and logs
+outputs/
+runs/
+logs/
+*.log
+*.out
+*.err
+
+# ML checkpoints and generated arrays
+checkpoints/
+models/
+artifacts/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.npy
+*.npz
+
+# Downloaded/local datasets
+data/
+datasets/
+
+# Experiment tracking tools
+wandb/
+mlruns/
+lightning_logs/
+tensorboard/
+events.out.tfevents*
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# IDE/editor and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini

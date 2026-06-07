@@ -1,0 +1,8 @@
+# KAN encoder L=2 hidden=128, head out=64, grid G=5, spline_order p=3  (R1 parity, tol=15%)
+dataset       in_dim  KAN_params  MLP_hidden  MLP_params    ratio   ok
+-----------------------------------------------------------------------
+yeast            103      339840         504      339256   0.17%  yes
+scene            294      559872         590      560564   0.12%  yes
+emotions          72      304128         487      304439   0.10%  yes
+mediamill        120      359424         514      359864   0.12%  yes
+bibtex          1836     2336256         849     2335663   0.03%  yes

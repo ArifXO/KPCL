@@ -1,0 +1,66 @@
+# BUG_claude_code.md — Claude Code Bug Response Log
+
+Managed by: **Claude Code** agent.
+Protocol: read BUG_codex.md first; for each issue record what was broken,
+what was fixed, or why deferred (with rationale). Cite the source review.
+Newest entries appended at the bottom under a dated `## YYYY-MM-DD` heading.
+
+---
+
+<!-- No entries yet — project scaffolded on 2026-06-07. -->
+
+## 2026-06-08 — GATE H0 verdict (Stage 3 spec experiment)
+
+**Result: H0 FAIL — KAN ≥ MLP macro-AUROC on only 2/5 datasets (threshold ≥3/5).**
+Artifacts: `runs/results/spec_h0/h0.csv`, `runs/results/spec_h0/h0_verdict.md`,
+`runs/results/spec_h0/run.log`. Param-matched (≤0.2%), 3 seeds [42,1337,2024],
+spec_h0 config (25 epochs, B=256, subsample≤4000), linear probe macro-AUROC.
+
+| dataset | KAN | MLP | Δ (KAN−MLP) | winner |
+|---|---|---|---|---|
+| yeast | 0.6813 | 0.7242 | −0.0429 | MLP (clear) |
+| scene | 0.9338 | 0.9402 | −0.0064 | MLP (tie, < seed std) |
+| emotions | 0.8253 | 0.8275 | −0.0022 | MLP (tie, < seed std) |
+| mediamill | 0.7095 | 0.5973 | +0.1122 | KAN (decisive) |
+| bibtex | 0.8811 | 0.7839 | +0.0972 | KAN (decisive) |
+
+Per CLAUDE.md gate: **STOPPED — did not build KPCL.** Results reported as-is, not massaged.
+
+Honest diagnostics (from saved data, no extra runs):
+- KAN wins decisively on the two high-dim / many-label sets (mediamill 101 labels,
+  bibtex 159 labels); loses on low-label yeast; statistically ties scene/emotions.
+- KAN's InfoNCE pretext loss is consistently HIGHER than MLP's (e.g. bibtex 2.42 vs
+  1.88) yet KAN probes BETTER there — pretext-loss ≠ probe quality.
+- Open fairness question (NOT yet investigated, would be a bug-fix not a tune):
+  layer-2 KAN spline inputs may exceed grid_range (−2,2) → spline path saturates →
+  KAN partly reduced to its SiLU base path. If true on yeast/scene/emotions this is a
+  legitimate implementation handicap to fix before treating the premise as dead.
+
+Note: no git repo yet → no commit hash recorded (playbook asks for one). Pending `git init`.
+
+No Codex review (BUG_codex.md) to respond to as of this date.
+
+### Grid-range saturation diagnostic (follow-up, `diag_gridrange.py`)
+
+Measured layer-2 spline health (1 seed, 10-epoch KAN). `runs/results/spec_h0/gridrange_diag.csv`.
+
+| dataset | L2 out-of-grid | L2 coverage Σ_c B_c | L2 spline share | H0 result |
+|---|---|---|---|---|
+| yeast | 3% | 0.998 | 0.685 | KAN loses — **healthy** |
+| emotions | 2% | 0.999 | 0.744 | KAN ties — **healthy** |
+| scene | 28% | 0.901 | 0.473 | KAN ties — partial sat |
+| mediamill | 14% | 0.972 | 0.561 | KAN wins |
+| bibtex | 99% | 0.016 | 0.027 | KAN wins — **spline dead, base-path only** |
+
+Findings (honest):
+1. Saturation does NOT explain the H0 losses: yeast & emotions layer-2 splines are
+   perfectly healthy (cov≈0.998, spline_share≈0.7) and the KAN still fails to beat MLP.
+   The premise weakness there is real, not a grid artifact.
+2. Saturation IS a real defect on scene (28% out) and catastrophic on bibtex (99% out,
+   spline path contributes 2.7% → layer-2 is effectively an MLP/SiLU layer).
+3. Irony: bibtex's KAN "win" is driven by the base path, NOT the spline structure KPCL
+   would exploit — so it is weak evidence for the KAN premise.
+4. A principled inter-layer-normalisation fix (keep layer-2 inputs in grid range, per
+   Explainer §2 / pitfall) is warranted on its own merits and could flip scene (tie +
+   saturated) toward 3/5, but cannot help the already-healthy yeast/emotions. Even a
+   perfect fix is NOT guaranteed to pass H0. Decision on the fix deferred to the user.

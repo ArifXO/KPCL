@@ -1,0 +1,7 @@
+# @package _global_.experiment
+# Smoke runs prove the pipeline executes; NOT evidence for hypothesis gates (CLAUDE.md).
+# Smoke run_ids are tagged smoke_* and filtered from gate evaluation.
+is_smoke: true
+epochs: 3
+batch_size: 4
+max_steps: 10

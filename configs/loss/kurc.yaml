@@ -1,0 +1,5 @@
+# @package _global_.loss
+type: kurc
+temperature: 0.07
+# lambda_occ: weight on cluster-occupancy entropy regulariser
+lambda_occ: 0.1

@@ -1,0 +1,5 @@
+# @package _global_.experiment
+is_smoke: false
+epochs: 100
+batch_size: 256
+max_steps: null

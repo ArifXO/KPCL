@@ -1,0 +1,11 @@
+defaults:
+  - data: yeast
+  - model: kan
+  - loss: infonce
+  - experiment: smoke
+  - aug: default
+  - _self_
+
+seed: 42
+# run_name is set by train.py from timestamp+UUID (R8); never from user input.
+run_name: ???

@@ -30,7 +30,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "utils*", "scripts*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

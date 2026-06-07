@@ -14,7 +14,7 @@ import torch
 from src.models.encoder import KANEncoder, MLPEncoder
 from src.models.heads import KANHead, MLPHead, l2_normalize
 from src.models.spline_kan import KANLayer
-from src.models.parity import parity_for_input_dim
+from utils.parity import parity_for_input_dim
 
 DATASET_DIMS = {"yeast": 103, "scene": 294, "emotions": 72, "mediamill": 120, "bibtex": 1836}
 

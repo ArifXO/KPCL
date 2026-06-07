@@ -3,6 +3,7 @@ type: mlp
 hidden_dim: null      # null => auto-matched per input_dim to KAN params (R1, <=15%)
 embed_dim: 64         # head output = final contrastive embedding dim
 n_enc_layers: 2
+use_layer_norm: false   # plain MLP twin (see mlp_ln.yaml for the LayerNorm-matched variant)
 weight_decay: 1.0e-4
 lr: 1.0e-3
 # R1 parameter-matched twin. Auto-tuned MLP hidden (ratio vs KAN), from param_count.txt:

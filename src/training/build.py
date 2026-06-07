@@ -7,7 +7,7 @@ projection z (for the contrastive loss); represent(x) returns the encoder output
 
 build_model(cfg, input_dim) constructs the KAN or MLP twin. For the MLP with
 hidden_dim=null, the width is auto-matched (R1) to the canonical KAN reference
-(kan.yaml: hidden 128, embed 64, L=2, G=5, p=3) via src.models.parity.
+(kan.yaml: hidden 128, embed 64, L=2, G=5, p=3) via utils.parity.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from torch import Tensor
 
 from src.models.encoder import KANEncoder, MLPEncoder
 from src.models.heads import KANHead, MLPHead, l2_normalize
-from src.models.parity import parity_for_input_dim
+from utils.parity import parity_for_input_dim
 
 
 class ContrastiveModel(nn.Module):
@@ -50,8 +50,9 @@ def build_model(cfg, input_dim: int) -> ContrastiveModel:
         hidden = m.hidden_dim
         if hidden is None:  # R1 auto-match to canonical KAN reference
             hidden = parity_for_input_dim(input_dim, out_dim=m.embed_dim)["mlp_hidden"]
-        enc = MLPEncoder(input_dim, hidden, m.n_enc_layers)
-        head = MLPHead(hidden, m.embed_dim)
+        use_ln = bool(getattr(m, "use_layer_norm", False))
+        enc = MLPEncoder(input_dim, hidden, m.n_enc_layers, use_ln)
+        head = MLPHead(hidden, m.embed_dim, use_ln)
     else:
         raise ValueError(f"Unknown model type '{m.type}'. Valid: ['kan', 'mlp'].")
     return ContrastiveModel(enc, head)

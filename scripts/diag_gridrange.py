@@ -10,32 +10,21 @@ features) and layer-2 input (= layer-1 output):
   - coverage   : mean partition-of-unity sum_c B_c(h)  (~1 in-range, ->0 saturated)
   - layer-2 spline-vs-base magnitude ratio ||spline|| / (||spline||+||base||)
 
-Saves runs/results/spec_h0/gridrange_diag.csv. Run: python -m src.experiments.diag_gridrange
+Saves runs/results/spec_h0/gridrange_diag.csv. Run: python -m scripts.diag_gridrange
 """
 from __future__ import annotations
 
 import csv
-import os
 from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn.functional as F
-from hydra import compose, initialize_config_dir
 
 from src.data.loader import load_dataset
-from src.experiments.spec_h0 import DATASETS, _subsample, set_seed
+from utils.experiment import DATASETS, set_seed, standard_cfg, subsample
 from src.training.loop import train_contrastive
 
 OUT = Path("runs/results/spec_h0")
-
-
-def _cfg(dataset: str):
-    with initialize_config_dir(version_base=None, config_dir=os.path.abspath("configs")):
-        return compose(config_name="config", overrides=[
-            f"data={dataset}", "model=kan", "loss=infonce",
-            "experiment=spec_h0", "aug=default", "seed=42",
-            "experiment.epochs=10"])  # short: activation ranges stabilise early
 
 
 def _layer_stats(layer, h: torch.Tensor) -> tuple[float, float]:
@@ -48,9 +37,9 @@ def _layer_stats(layer, h: torch.Tensor) -> tuple[float, float]:
 def run() -> None:
     rows = []
     for ds in DATASETS:
-        cfg = _cfg(ds)
+        cfg = standard_cfg(ds, "kan", 42, extra=["experiment.epochs=10"])
         set_seed(42)
-        data = _subsample(load_dataset(cfg), cfg.experiment.subsample_train, 42)
+        data = subsample(load_dataset(cfg), cfg.experiment.subsample_train, 42)
         model, _ = train_contrastive(cfg, data, "cpu")
         enc = model.encoder
         with torch.no_grad():
@@ -67,7 +56,7 @@ def run() -> None:
         rows.append({"dataset": ds, "l1_out_frac": round(of1, 4), "l1_coverage": round(cov1, 4),
                      "l2_out_frac": round(of2, 4), "l2_coverage": round(cov2, 4),
                      "l2_spline_frac": round(ratio, 4)})
-        print(f"{ds:10s} L1[out>{'2':1s}={of1:.3f} cov={cov1:.3f}]  "
+        print(f"{ds:10s} L1[out>2={of1:.3f} cov={cov1:.3f}]  "
               f"L2[out={of2:.3f} cov={cov2:.3f} spline_share={ratio:.3f}]", flush=True)
 
     OUT.mkdir(parents=True, exist_ok=True)

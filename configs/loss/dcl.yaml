@@ -1,0 +1,4 @@
+# @package _global_.loss
+type: dcl
+temperature: 0.2
+tau_plus: 0.1   # assumed class-prior P(positive); 0 recovers InfoNCE exactly (Chuang 2020)

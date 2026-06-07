@@ -32,10 +32,22 @@ Stages gate sequentially (R2). Do not start Stage N+1 before Stage N tests are g
 - [x] Diagnosed grid-range: saturation real on scene(28%)/bibtex(99%), NOT on yeast/emotions (healthy).
 - [x] FIXED: parameter-free inter-layer + pre-head LayerNorm (use_layer_norm). Splines now alive
       on all 5 (L2 coverage ~0.99, spline_share ~0.73). 0 params, R1 parity intact, 49 tests green.
-- [ ] **DEFERRED (user decision):** re-gate H0 with fixed KAN? If yes, decide MLP-LayerNorm fairness.
-      Until then: do NOT build KPCL. See BUG_claude_code.md 2026-06-08.
+- [x] **RE-GATED (fixed KAN, 3 arms): H0 PASS.** (A) KAN≥MLP 4/5; (B) KAN≥MLP+LN 3/5.
+      KAN edge is structural+robust on many-label sets (mediamill/bibtex); scene was a
+      norm effect; yeast lost. runs/results/spec_h0/h0_regate.{csv,verdict.md}.
+      → Premise holds; KPCL line UNBLOCKED.
 
-## Stage 3 — KPCL (R3, R7, H1, H2)
+## Stage 4 — SupCon + DCL baselines — DONE
+- [x] supcon.py (multi-label: share≥1 label=positive; keys loss/supcon_component/temperature/n_positives_mean)
+- [x] dcl.py (Chuang2020 debiased denom, tau_plus Hydra, clamp g≥exp(−1/t), NaN-raise; keys
+      loss/dcl_component/tau_plus/neg_correction_mean). tau_plus=0 ≡ InfoNCE (allclose test).
+- [x] R3 tests both (test_supcon.py, test_dcl.py) — 16 green. Loop dispatches by cfg.loss.type.
+- [x] 1-seed yeast KAN baseline → runs/results/baseline_yeast/baseline.csv:
+      InfoNCE 0.6907 / SupCon 0.6745 / DCL 0.6839 macro-AUROC (yeast = KAN's weakest set).
+
+## Stage 5 — Knot extraction S(x) + Jaccard w_ik (next; KANLayer.knot_indices already exists)
+
+## Stage 6+ — KPCL (R3, R7, H1, H2)
 - [ ] `kpcl_loss`: knot-Jaccard w_ik (detached), w_ik=0 → InfoNCE exact (R3)
 - [ ] Unit tests: w_ik=0 allclose to InfoNCE; FN injection changes loss direction
 - [ ] H1 gate: FN-ranking AUC ≥ 0.55 & ≥ AUC_cos(z)+0.05 on ≥1/2 datasets

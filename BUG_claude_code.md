@@ -86,3 +86,26 @@ All layer-2 splines now healthy (≈layer-1 profile). 49 tests green; param pari
 decision). NOTE for any future H0 re-run: the fix materially changes the KAN (esp.
 bibtex), so prior h0.csv is stale for the fixed arch; also decide whether the MLP twin
 should get matched LayerNorm (it is a known performance booster) for a fair comparison.
+
+### H0 RE-GATE — fixed KAN vs MLP and MLP+LN (user requested both arms)
+
+45 runs (3 arms × 5 × 3 seeds). `runs/results/spec_h0/h0_regate.csv` + `h0_regate_verdict.md`.
+
+| dataset | KAN+LN | MLP | MLP+LN | KAN−MLP | KAN−(MLP+LN) |
+|---|---|---|---|---|---|
+| yeast | 0.6956 | 0.7242 | 0.7157 | −0.0285 | −0.0201 |
+| scene | 0.9413 | 0.9402 | 0.9469 | +0.0012 | −0.0056 |
+| emotions | 0.8316 | 0.8275 | 0.8198 | +0.0041 | +0.0118 |
+| mediamill | 0.7156 | 0.5973 | 0.6886 | +0.1183 | +0.0270 |
+| bibtex | 0.8722 | 0.7839 | 0.8226 | +0.0883 | +0.0495 |
+
+- **(A) KAN ≥ MLP on 4/5 → H0(A) PASS** (was 2/5 before the grid fix; loses only yeast).
+- **(B) KAN ≥ MLP+LN on 3/5 → H0(B) PASS** (decisive control; loses yeast & scene).
+
+Reading: the grid-range fix was a real handicap removal (2/5 → 4/5 vs plain MLP). The
+KAN's edge **survives the LayerNorm control** on emotions/mediamill/bibtex, so it is not
+merely a normalisation artifact — but it is **structural and robust only on the
+many-label sets** (mediamill 101, bibtex 159: KAN−(MLP+LN) = +0.027, +0.050). scene's
+variant-A win was a normalisation effect (flips once MLP gets LN); yeast the KAN loses
+outright. **H0 premise now holds** → unblocks Stage 4/KPCL, with the honest caveat that
+the KAN advantage concentrates on high-label-cardinality data. Not massaged.

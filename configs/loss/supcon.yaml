@@ -1,0 +1,4 @@
+# @package _global_.loss
+type: supcon
+temperature: 0.2
+# Multi-label positive convention: two samples are positives iff they share >=1 label.

@@ -6,6 +6,9 @@ n_enc_layers: 2       # shallow: Jacobian rank decays with depth (pitfall 3)
 grid_size: 5          # G intervals -> G+spline_order basis functions per edge
 spline_order: 3       # cubic B-spline; exactly p+1=4 active basis per input
 grid_range: [-2.0, 2.0]
+# Parameter-free LayerNorm between layers + before head: keeps deeper spline inputs
+# inside grid_range so the spline path doesn't saturate (Explainer §2). 0 added params.
+use_layer_norm: true
 # weight_decay >= 1e-4 REQUIRED: KAN partition-of-unity nullspace (pitfall 2)
 weight_decay: 1.0e-4
 lr: 1.0e-3

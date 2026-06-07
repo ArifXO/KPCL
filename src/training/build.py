@@ -43,8 +43,9 @@ def build_model(cfg, input_dim: int) -> ContrastiveModel:
     if m.type == "kan":
         gr = tuple(m.grid_range)
         enc = KANEncoder(input_dim, m.hidden_dim, m.n_enc_layers,
-                         m.grid_size, m.spline_order, gr)
-        head = KANHead(m.hidden_dim, m.embed_dim, m.grid_size, m.spline_order, gr)
+                         m.grid_size, m.spline_order, gr, m.use_layer_norm)
+        head = KANHead(m.hidden_dim, m.embed_dim, m.grid_size, m.spline_order, gr,
+                       m.use_layer_norm)
     elif m.type == "mlp":
         hidden = m.hidden_dim
         if hidden is None:  # R1 auto-match to canonical KAN reference

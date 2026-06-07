@@ -28,9 +28,12 @@ Stages gate sequentially (R2). Do not start Stage N+1 before Stage N tests are g
 - [x] augment.py (feature-mask/gaussian/mixup, 2 views), probe.py (AUROC/mAP), geometry.py
 - [x] Training loop wiring (build encoder+head from cfg; optimizer weight_decay≥1e-4)
 - [x] H0 gate RAN: KAN-InfoNCE vs MLP-InfoNCE, 5 datasets × 3 seeds → runs/results/spec_h0/
-- [!] **H0 FAIL (2/5).** KAN wins mediamill+bibtex decisively; loses yeast; ties scene/emotions.
-      GATE: STOP — do not build KPCL until premise resolved. See BUG_claude_code.md 2026-06-08.
-      Open fairness check before declaring premise dead: layer-2 spline grid-range saturation.
+- [!] **H0 FAIL (2/5)** on as-tested arch. KAN wins mediamill+bibtex; loses yeast; ties scene/emotions.
+- [x] Diagnosed grid-range: saturation real on scene(28%)/bibtex(99%), NOT on yeast/emotions (healthy).
+- [x] FIXED: parameter-free inter-layer + pre-head LayerNorm (use_layer_norm). Splines now alive
+      on all 5 (L2 coverage ~0.99, spline_share ~0.73). 0 params, R1 parity intact, 49 tests green.
+- [ ] **DEFERRED (user decision):** re-gate H0 with fixed KAN? If yes, decide MLP-LayerNorm fairness.
+      Until then: do NOT build KPCL. See BUG_claude_code.md 2026-06-08.
 
 ## Stage 3 — KPCL (R3, R7, H1, H2)
 - [ ] `kpcl_loss`: knot-Jaccard w_ik (detached), w_ik=0 → InfoNCE exact (R3)

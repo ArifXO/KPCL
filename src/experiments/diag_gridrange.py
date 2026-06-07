@@ -57,7 +57,9 @@ def run() -> None:
             x = torch.as_tensor(data.X_train[:2000], dtype=torch.float32)
             l1, l2 = enc.layers[0], enc.layers[1]
             of1, cov1 = _layer_stats(l1, x)
-            h1 = l1(x)                       # layer-2 input
+            h1 = l1(x)
+            if enc.norms is not None:        # actual layer-2 input (post inter-layer norm)
+                h1 = enc.norms[0](h1)
             of2, cov2 = _layer_stats(l2, h1)
             base = F.linear(F.silu(h1), l2.base_weight)
             spline = torch.einsum("bik,oik->bo", l2.b_splines(h1), l2.spline_weight)

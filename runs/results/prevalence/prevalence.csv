@@ -1,0 +1,6 @@
+name,n_train,n_features,n_labels,cardinality,per_label_rate_mean,fn_rate,batch_size
+yeast,1675,103,14,4.2681,0.3049,0.7953,256
+scene,1681,294,6,1.0767,0.1795,0.1938,256
+emotions,406,72,6,1.9039,0.3173,0.4853,256
+mediamill,30734,120,101,4.4014,0.0436,0.7164,256
+bibtex,5133,1836,159,2.4142,0.0152,0.0583,256

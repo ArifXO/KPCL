@@ -64,3 +64,25 @@ Findings (honest):
    Explainer §2 / pitfall) is warranted on its own merits and could flip scene (tie +
    saturated) toward 3/5, but cannot help the already-healthy yeast/emotions. Even a
    perfect fix is NOT guaranteed to pass H0. Decision on the fix deferred to the user.
+
+### FIX APPLIED — parameter-free inter-layer + pre-head LayerNorm (user: "fix, don't re-gate yet")
+
+Added `nn.LayerNorm(..., elementwise_affine=False)` between KAN encoder layers and
+before the KAN head (`use_layer_norm: true`, kan.yaml). 0 params → R1 parity intact;
+layer-0 and `knot_indices(x)`=S(x) untouched. Re-ran `diag_gridrange` (splines now alive):
+
+| dataset | L2 out-of-grid | L2 coverage | L2 spline share |
+|---|---|---|---|
+| yeast | 3%→4% | 0.998→0.999 | 0.69→0.72 |
+| scene | 28%→4% | 0.901→0.999 | 0.47→0.74 |
+| emotions | 2%→5% | 0.999→0.998 | 0.74→0.73 |
+| mediamill | 14%→4% | 0.972→0.996 | 0.56→0.71 |
+| bibtex | 99%→4% | 0.016→0.988 | 0.03→0.76 |
+
+All layer-2 splines now healthy (≈layer-1 profile). 49 tests green; param parity unchanged.
+
+**H0 verdict NOT changed.** The recorded H0 FAIL (2/5) stands for the as-tested
+(no-LayerNorm) architecture; the fixed KAN has NOT been re-gated (user deferred that
+decision). NOTE for any future H0 re-run: the fix materially changes the KAN (esp.
+bibtex), so prior h0.csv is stale for the fixed arch; also decide whether the MLP twin
+should get matched LayerNorm (it is a known performance booster) for a fair comparison.

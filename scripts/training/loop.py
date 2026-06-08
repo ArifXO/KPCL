@@ -11,6 +11,7 @@ from __future__ import annotations
 import torch
 
 from src.data.augment import two_views
+from src.losses.cosfn import cosfn_loss
 from src.losses.dcl import dcl_loss
 from src.losses.infonce import info_nce_loss
 from src.losses.kpcl import kpcl_loss
@@ -47,9 +48,11 @@ def _compute_loss(cfg, model, v1, v2, labels):
         return supcon_loss(z1, z2, labels, cfg.loss.temperature)
     if t == "dcl":
         return dcl_loss(z1, z2, cfg.loss.temperature, cfg.loss.tau_plus)
+    if t == "cosfn":
+        return cosfn_loss(z1, z2, cfg.loss.temperature, cfg.loss.gamma)
     if t == "kpcl":
         return _kpcl(cfg, model, v1, v2, z1, z2)
-    raise ValueError(f"Unknown loss type '{t}'. Valid: infonce/supcon/dcl/kpcl/kurc.")
+    raise ValueError(f"Unknown loss type '{t}'. Valid: infonce/supcon/dcl/cosfn/kpcl/kurc.")
 
 
 def train_contrastive(cfg, data, device) -> tuple:

@@ -4,8 +4,8 @@ A living, analytical record of every experiment and **what it says about the the
 hypotheses**. Rewritten/extended after each run. All numbers are read directly from
 `runs/results/.../*.csv` — reported as-is, not massaged.
 
-Last updated: **2026-06-08**, through Stage 8 (KURC). Compute: **RTX 3060 (cu128)** from H1
-onward; the prevalence/parity tables and H0 ran on CPU. No git repo yet (no commit hashes).
+Last updated: **2026-06-08**, through Stage 9 (**full H2/H3 sweep — both gates FAIL**). Compute:
+**RTX 3060 (cu128)** from H1 onward; the prevalence/parity tables and H0 ran on CPU. No git repo.
 
 ---
 
@@ -23,11 +23,18 @@ prevent spline collapse. Four pre-registered gates decide whether the story hold
 |---|---|---|---|
 | **H0** | KAN-InfoNCE ≥ MLP-InfoNCE on ≥3/5 (param-matched) | ✅ **PASS** (4/5; 3/5 vs MLP+LN) | Premise holds, but **cardinality-dependent** |
 | **H1** | knot-Jaccard ranks FNs better than `cos(z)` on ≥1 of {yeast, mediamill} | ✅ **PASS** (mediamill, decisive) | **The MLP-impossible signal is real** — on many-label data |
-| **H2** | KPCL beats InfoNCE +1.5 & DCL +0.5 macro-AUROC (≥3/4 sig) | ⏳ pending (Stage 9) | **At risk** — signal is concentrated, not broad |
-| **H3** | KURC ≥ InfoNCE AUROC & uniformity +0.1 nats | ⏳ pending (Stage 9) | Regularizer works; needs larger λ |
+| **H2** | KPCL beats InfoNCE +1.5 & DCL +0.5 macro-AUROC (≥3/4 sig) | ❌ **FAIL** | KPCL-the-loss adds **~0**; loses to MLP-DCL |
+| **H3** | KURC ≥ InfoNCE AUROC & uniformity +0.1 nats | ❌ **FAIL** | Regularizer right-direction but **~8× too weak** at λ=0.1 |
 
-**Bottom line so far:** the *novel core claim* — that the knot code carries usable
-false-negative signal — **is empirically validated (H1, mediamill)**. The premise (H0) holds.
+**Bottom line (final for the proposed methods):** the *premise* (H0: KANs match MLPs) and the
+*novel signal* (H1: the knot code ranks false negatives, +0.13 AUC over `cos(z)` on mediamill)
+both **hold**. But **neither proposed method clears its gate (H2, H3 both FAIL)**. The decisive
+same-encoder reference shows **the KPCL false-negative-cancellation loss adds nothing downstream**
+(`kan_kpcl − kan_infonce` ≈ −0.001 to −0.016 on every dataset); the only real value is the **KAN
+encoder** on high-cardinality data — and even that is **beaten by a plain MLP + DCL** on the
+showcase datasets. So: the knot signal is *real but not downstream-useful as a loss*, and KURC is
+a *valid-but-weak* regularizer. Honest, somewhat negative result for the methods; positive for the
+encoder premise and the existence of the signal.
 The open risk is whether that signal **translates into a broad downstream win (H2)**, because
 every result so far says the KAN/knot advantage **lives on high-label-cardinality datasets and
 is absent on low-cardinality ones**.
@@ -223,33 +230,73 @@ the sweep's job, likely with a larger λ_occ. **Not** tuned on yeast to chase H3
 
 ---
 
-## 9. GATES H2 / H3 — pending (Stage 9 sweep)
+## 9. GATES H2 / H3 — the full sweep (Stage 9): **both FAIL**
 
-**H2 (KPCL headline):** KPCL beats InfoNCE by ≥1.5 macro-AUROC and DCL by ≥0.5, mean over
-{yeast, scene, emotions, mediamill}, ≥3/4 individually significant.
+8 methods × 5 datasets × 5 seeds, 50 epochs, GPU. Baselines = **MLP+LayerNorm** (architecture-
+matched to the KAN's LN); KPCL/KURC = KAN; `kan_infonce` added as the **same-encoder reference**.
+`runs/results/sweep/{sweep_tables.csv, verdict.md}` + full R8 per-run artifacts.
 
-> **Honest forecast / the central risk:** H1 located the knot signal on **mediamill only**.
-> H2 averages over **four** datasets, three of which (yeast, scene, emotions) showed weak or no
-> knot signal. If KPCL's downstream gain tracks the H1 signal, it may lift mediamill strongly
-> but barely move the other three — in which case the **mean** may not reach +1.5 and the
-> "≥3/4 significant" clause likely **fails**. The 1-seed yeast result (KPCL ≈ InfoNCE) already
-> foreshadows this. **H2 passing is genuinely uncertain**, and a partial result (KPCL wins big
-> on mediamill, ties elsewhere) is the most likely outcome on current evidence. That would
-> still be a publishable, honest finding — "KPCL helps where label cardinality is high" — even
-> if the strict H2 gate doesn't clear.
+### 9.1 H2 — KPCL vs the baselines (macro-AUROC, mean over 5 seeds)
 
-**H3 (KURC fallback):** KURC ≥ InfoNCE on AUROC and uniformity +0.1 nats. The Stage-8 signal is
-in the right direction; H3 likely needs λ_occ > 0.1. KURC is the safety net: it is valuable
-(prevents spline collapse, improves geometry) **regardless** of whether the FN story scales.
+| dataset | **kan_kpcl** | mlp_infonce | mlp_dcl | mlp_supcon | mlp_cosfn | kan_infonce |
+|---|---|---|---|---|---|---|
+| yeast | 0.7016 | 0.7124 | 0.7109 | 0.6989 | 0.7083 | 0.7032 |
+| scene | 0.9399 | 0.9486 | 0.9424 | 0.9543 | 0.9484 | 0.9415 |
+| emotions | 0.8277 | 0.8162 | 0.8139 | 0.8075 | 0.8220 | 0.8282 |
+| mediamill | 0.7040 | 0.6255 | **0.7354** | **0.7323** | 0.6322 | 0.7057 |
+
+- KPCL − MLP-InfoNCE: mean **+0.0176** (clears +0.015) — but only emotions(+0.012*) and
+  mediamill(+0.079*) are significant; yeast(−0.011) and scene(−0.009) are losses → **2/4 sig**.
+- KPCL − MLP-DCL: mean **−0.0073** (needs +0.005) — **DCL wins** (mediamill DCL 0.735 ≫ KPCL 0.704).
+- **VERDICT: H2 FAIL** (fails the DCL margin and the ≥3/4-significant clause).
+
+### 9.2 Why — the decisive same-encoder decomposition
+
+The "KPCL vs MLP-InfoNCE" comparison conflates **encoder** with **loss**. Splitting them with
+`kan_infonce`:
+
+| effect | comparison | yeast | scene | emotions | mediamill | reading |
+|---|---|---|---|---|---|---|
+| **KPCL loss** | kan_kpcl − kan_infonce | −0.0016 | −0.0016 | −0.0005 | −0.0017 | **adds ~0 everywhere** |
+| **KAN encoder** | kan_infonce − mlp_infonce | −0.009 | −0.007 | +0.012 | **+0.080** | the only real effect |
+
+So the entire mediamill "KPCL win" (+0.079 vs MLP-InfoNCE) is the **KAN encoder** (+0.080); the
+**FN-cancellation loss contributes −0.0017**. **The H1 knot signal does not translate into a
+downstream KPCL gain.** Worse: where KPCL was supposed to win (mediamill, bibtex), a plain
+**MLP+DCL beats it outright** (mediamill 0.735 vs 0.704; bibtex 0.895 vs 0.864). The decisive
+control confirms the same story: KPCL − cosFN on mediamill is +0.072, but `kan_infonce − cosfn`
+is already +0.074 — i.e. encoder, not signal.
+
+> **Likely (untested) reason:** in H1 the knot AUC (0.64) was measured on *clean* val inputs, but
+> during KPCL training `w_ik` is computed on *augmented* inputs (feature-mask + noise perturb the
+> spline intervals), so the training-time FN signal is much noisier — and a noisy weight cancels
+> true negatives about as often as false ones. A future fix (compute `w_ik` on un-augmented
+> inputs, or weaker augmentation) is worth trying but was **not** applied here.
+
+### 9.3 H3 — KURC (macro-AUROC + uniformity)
+
+KURC ≥ InfoNCE on AUROC (mean ΔAUROC +0.016 vs MLP-InfoNCE; ~0 vs same-encoder kan_infonce), but
+**uniformity is not improved by 0.1 nats**. At matched encoder (kurc − kan_infonce): Δuniformity
+≈ **−0.013 nats** (right direction, ~8× short of −0.1) and Δeff-rank **+0.4…+1.4** (anti-collapse
+works, weakly). **VERDICT: H3 FAIL** — magnitude, not direction; would need a much larger λ_occ
+than the 0.1 used (untested; raising λ to pass would be tuning-to-the-gate).
+
+### 9.4 bibtex (reported-only, low-FN stress test)
+MLP-DCL 0.895 > kan_infonce 0.879 > kan_kurc 0.873 > kan_kpcl 0.864 > MLP-InfoNCE 0.754. KPCL is
+*below* plain KAN-InfoNCE here — consistent with "no FN signal on low-FN data."
 
 ---
 
 ## 10. Extra findings worth recording
 
-- **Cardinality is the master variable.** Across H0, H1, KPCL, and KURC, the KAN/knot advantage
-  scales with `n_labels`: none on yeast(14)/scene(6)/emotions(6), strong on mediamill(101),
-  and bibtex(159) wins H0 but via its *base path*, not splines (see below). This is the single
-  most consistent pattern in the data and the thesis's main empirical nuance.
+- **The methods don't pay off; the encoder (partly) does.** The single biggest result of the
+  sweep: KPCL-the-loss and KURC-the-regularizer add ≈0 at matched encoder. The thesis's headline
+  mechanisms do not improve downstream performance at these settings. What *does* help is the KAN
+  **encoder** on high-cardinality data — and even that loses to MLP+DCL on mediamill/bibtex.
+- **MLP+DCL is the surprise winner on many-label data** (mediamill 0.735, bibtex 0.895). The
+  debiased *self-supervised* baseline beats the full KAN+KPCL method where KPCL was meant to shine.
+- **Cardinality is the master variable.** The KAN/knot advantage scales with `n_labels`: none on
+  yeast(14)/scene(6)/emotions(6), strong on mediamill(101)/bibtex(159).
 - **FN-rate ≠ FN-detectability.** yeast has the most false negatives yet they are undetectable
   by the knot code; mediamill's are highly detectable. The thesis should not claim "high-FN
   datasets benefit" — it should claim "high-label-cardinality datasets benefit."

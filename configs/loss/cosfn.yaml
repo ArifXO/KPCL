@@ -1,0 +1,4 @@
+# @package _global_.loss
+type: cosfn
+temperature: 0.2
+gamma: 2.0   # matched to KPCL's FN-cancellation strength (isolates signal source)

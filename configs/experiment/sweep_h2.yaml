@@ -1,0 +1,9 @@
+# @package _global_.experiment
+# Full H2/H3 sweep (GPU): all methods x datasets x 5 seeds, full R8 artifacts per run.
+is_smoke: false
+epochs: 50
+batch_size: 256
+max_steps_per_epoch: null
+subsample_train: 4000
+probe_epochs: 150
+probe_lr: 0.01

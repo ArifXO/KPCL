@@ -77,12 +77,20 @@ Stages gate sequentially (R2). Do not start Stage N+1 before Stage N tests are g
       (Δ-0.0006); uniformity -3.561 vs -3.547 (Δ-0.015 nats, more uniform); eff_rank 50.4 vs
       49.5 (less collapse). Regularizer active but lambda=0.1 mild on yeast (< H3's 0.1-nat).
 
-## Stage 9 — H2/H3 sweep (4 datasets × suite × 5 seeds, GPU) — NEXT
-- [ ] H2: KPCL beats InfoNCE +1.5 & DCL +0.5 macro-AUROC (mediamill/scene/emotions focus)
-- [ ] H3: KURC ≥ InfoNCE AUROC & uniformity +0.1 nats (may need larger lambda_occ)
+## Stage 9 — H2/H3 full sweep (8 methods × 5 datasets × 5 seeds, GPU) — DONE → **H2 FAIL, H3 FAIL**
+- [x] cosfn control (MLP+cosine-FN), kan_infonce reference, mlp_ln baselines, R8 artifacts/run.
+      runs/results/sweep/{sweep_tables.csv,verdict.md} + 200 checkpoints. 97 tests green.
+- [x] **H2 FAIL:** KPCL−InfoNCE mean +0.018 (clears) but KPCL−DCL −0.007 (DCL wins) & only 2/4 sig.
+      Decisive: kan_kpcl − kan_infonce ≈ 0 → KPCL-loss adds nothing; mediamill win is the ENCODER.
+      MLP+DCL beats KAN+KPCL on mediamill(0.735>0.704) & bibtex(0.895>0.864).
+- [x] **H3 FAIL:** KURC≥InfoNCE AUROC ✓ but uniformity only −0.013 nats at matched encoder
+      (need −0.1; ~8× short). Anti-collapse direction right (eff-rank +1), magnitude weak at λ=0.1.
+- → H0+H1 hold (premise + signal real) but the proposed METHODS don't clear their gates.
 
-## Stage 8+ — KURC (always build) + H2/H3 sweep
-- [ ] kurc_loss (entropy reg); H2: KPCL vs InfoNCE(+1.5)/DCL(+0.5); H3: KURC vs InfoNCE
+## Next (open questions, not yet scoped)
+- KPCL likely hurt by augmented-input knot noise: try w_ik on clean inputs / weaker aug (untested).
+- H3 may need larger lambda_occ (untested; raising it to pass = tuning-to-gate).
+- Stage 10 thesis artifacts: tables/figures/pre-reg appendix from runs/results/ (honest negative).
 
 ## Stage 4 — KURC Fallback (H3)
 - [ ] `kurc_loss` implementation + tests (entropy keys, q_c clamped at 1e-12)

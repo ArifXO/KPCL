@@ -7,13 +7,18 @@ this in utils/ (not in any one script) avoids cross-script imports.
 """
 from __future__ import annotations
 
+import json
 import os
 import random
 import time
+import uuid
+from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import torch
 from hydra import compose, initialize_config_dir
+from omegaconf import OmegaConf
 
 from src.data.augment import two_views
 from src.metrics.geometry import alignment, effective_rank, uniformity
@@ -65,8 +70,8 @@ def subsample(data, k: int, seed: int):
     return data._replace(X_train=data.X_train[idx], y_train=data.y_train[idx])
 
 
-def one_run(cfg, data, device) -> dict:
-    """Train (loss = cfg.loss.type), linear-probe, and measure geometry on test."""
+def run_with_model(cfg, data, device):
+    """Train (loss = cfg.loss.type), probe, measure geometry. Returns (metrics, model)."""
     set_seed(cfg.seed)
     t0 = time.time()
     model, hist = train_contrastive(cfg, data, device)
@@ -78,6 +83,29 @@ def one_run(cfg, data, device) -> dict:
         geom = {"alignment": float(alignment(model(v1), model(v2))),
                 "uniformity": float(uniformity(z)),
                 "effective_rank": float(effective_rank(z))}
-    return {"macro_auroc": probe["macro_auroc"], "mAP": probe["mAP"], **geom,
-            "params": model.param_count(), "final_loss": hist[-1],
-            "secs": round(time.time() - t0, 1)}
+    metrics = {"macro_auroc": probe["macro_auroc"], "mAP": probe["mAP"], **geom,
+               "params": model.param_count(), "final_loss": hist[-1],
+               "secs": round(time.time() - t0, 1)}
+    return metrics, model
+
+
+def one_run(cfg, data, device) -> dict:
+    """Train + probe + geometry; return the metrics dict only."""
+    return run_with_model(cfg, data, device)[0]
+
+
+def save_run_artifacts(cfg, model, metrics: dict) -> str:
+    """Write the R8 artifact set for one run; return its run_name (timestamp+UUID)."""
+    run_name = time.strftime("%Y%m%d-%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    ck = Path("runs/checkpoints") / run_name
+    ck.mkdir(parents=True, exist_ok=True)
+    resolved = deepcopy(cfg)
+    resolved.run_name = run_name
+    OmegaConf.save(resolved, ck / "config.yaml")
+    torch.save(model.state_dict(), ck / "model.pt")
+    (ck / "metrics.json").write_text(
+        json.dumps({k: (float(v) if isinstance(v, (int, float, np.floating)) else v)
+                    for k, v in metrics.items()}, indent=2), encoding="utf-8")
+    (ck / "param_count.txt").write_text(f"{model.param_count()} trainable params\n", encoding="utf-8")
+    (ck / "git_info.txt").write_text("no git repo yet (pending git init)\n", encoding="utf-8")
+    return run_name

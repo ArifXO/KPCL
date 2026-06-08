@@ -227,3 +227,31 @@ The head applies a parameter-free pre-norm before its spline, so B is computed o
 head.norm(h) to match the activations the head actually uses (forward-consistent). The KPCL
 S(x) remains the encoder layer-0 code (per earlier stages) — KURC and KPCL read different
 layers by design. (scripts/training/loop.py)
+
+---
+
+## 2026-06-08 — Stage 9 (H2/H3 sweep)
+
+**D9.1 — Baselines use MLP+LayerNorm (mlp_ln), not plain MLP.**
+The task said "param-matched MLP encoder." Since the KAN now has parameter-free LayerNorm,
+the architecture-matched param-matched twin is MLP+LN. Used mlp_ln for InfoNCE/SupCon/DCL/cosFN
+so a KPCL win cannot come from a normalization freebie (the harder, honest control). LN is
+parameter-free, so R1 parity holds. (scripts/smoke/sweep_h2.py)
+
+**D9.2 — Added `kan_infonce` as an 8th method (same-encoder reference).**
+Not in the task's matrix. Without it, "KPCL vs InfoNCE" conflates encoder (KAN vs MLP) with loss
+(KPCL vs InfoNCE), and H3's uniformity claim is meaningless across encoders. The reference was
+DECISIVE: it revealed KPCL-the-loss adds ~0 (kan_kpcl − kan_infonce ≈ −0.001…−0.016), i.e. the
+mediamill "win" is the encoder, not the FN-cancellation. Evaluated H2/H3 both as the task defines
+(vs mlp_infonce) AND vs kan_infonce. (scripts/smoke/sweep_h2.py; runs/results/sweep/verdict.md §)
+
+**D9.3 — Driver-orchestrated sweep instead of literal `hydra --multirun`.**
+The task said "Hydra multirun." Used a driver that composes a cfg per cell, because the matrix has
+a custom method→encoder mapping (KAN for some, MLP for others) + the cosFN control + per-cell R8
+artifacts + custom H2/H3 aggregation — none of which map cleanly to a flat multirun sweep. Each
+cell still uses the Hydra config groups via `standard_cfg`. (scripts/smoke/sweep_h2.py)
+
+**D9.4 — H3 evaluated at the config-default lambda_occ=0.1, not tuned to pass.**
+Stage 8 already showed λ=0.1 gives a small uniformity gain. I did NOT raise λ to chase the
+−0.1-nat target (that would be tuning-to-the-gate). H3 reported FAIL at λ=0.1 with the honest note
+that a larger λ is untested. (configs/loss/kurc.yaml; runs/results/sweep/verdict.md)

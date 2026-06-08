@@ -136,3 +136,28 @@ Notes:
   knot_code would be ~2 GB for mediamill's val set; Jaccard is O-invariant so identical result.
 - H0 encoders (25-epoch) were not persisted, so H1 retrained KAN+InfoNCE at 100 epochs per the
   protocol's "epoch ≥ 100" — documented in Deviations (see D6.1).
+
+## 2026-06-08 — GATES H2 & H3 verdict (Stage 9 full sweep) — both FAIL
+
+8 methods × 5 datasets × 5 seeds (GPU). Baselines = MLP+LayerNorm; KPCL/KURC = KAN.
+Added kan_infonce as same-encoder reference (decisive). `runs/results/sweep/{sweep_tables.csv,
+verdict.md}` + full R8 per-run artifacts.
+
+**H2 FAIL.** KPCL−InfoNCE mean +0.0176 (clears +0.015) BUT KPCL−DCL mean −0.0073 (need +0.005;
+DCL wins) and only 2/4 individually significant (need 3): emotions +0.0115*, mediamill
++0.0785*, yeast −0.011, scene −0.009.
+
+**H3 FAIL.** KURC ≥ InfoNCE AUROC (✓) but uniformity NOT improved by 0.1 nats.
+
+**The decisive finding (from kan_infonce):** KPCL-the-LOSS adds ~0 at matched encoder
+(kan_kpcl − kan_infonce = −0.001 to −0.016 on every dataset). The mediamill "win" is entirely
+the KAN ENCODER (kan_infonce − mlp_infonce = +0.080), not the FN-cancellation. And MLP-DCL
+(0.735) / MLP-SupCon (0.732) BEAT kan_kpcl (0.704) on mediamill outright. KURC's regularizer is
+directionally right (uniformity −0.013 nats, eff-rank +1 at matched encoder) but ~8× below the
+−0.1 target at λ=0.1.
+
+So: H0 (KAN premise) + H1 (knot signal exists) HOLD, but the proposed METHODS do not clear
+their headline gates. The KAN encoder is the real (cardinality-dependent) value; the knot→loss
+(KPCL) and knot→entropy (KURC) conversions don't pay off downstream at these settings. Likely
+cause for KPCL: w_ik computed on augmented inputs is noisier than the clean-input H1 signal.
+Reported as-is, not massaged.

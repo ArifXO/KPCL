@@ -8,7 +8,7 @@ records geometry. Writes runs/results/spec_h0/h0.csv and h0_verdict.md.
 H0 premise: KAN >= MLP macro-AUROC on >=3/5 datasets (mean over seeds). FAIL -> the
 KAN premise is broken; STOP, do not build KPCL. Results are reported, not massaged.
 
-Run:  python -m scripts.spec_h0
+Run:  python -m scripts.smoke.spec_h0
 """
 from __future__ import annotations
 

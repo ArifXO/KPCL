@@ -7,7 +7,7 @@ macro-AUROC + mAP. Writes runs/results/baseline_yeast/baseline.csv.
 This is a baseline reference table (R2: baselines before KPCL), NOT a gate. SupCon
 positive convention: two samples are positives iff they share >=1 label.
 
-Run: python -m scripts.baseline_yeast
+Run: python -m scripts.smoke.baseline_yeast
 """
 from __future__ import annotations
 

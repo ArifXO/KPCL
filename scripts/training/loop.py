@@ -14,7 +14,7 @@ from src.data.augment import two_views
 from src.losses.dcl import dcl_loss
 from src.losses.infonce import info_nce_loss
 from src.losses.supcon import supcon_loss
-from src.training.build import build_model
+from scripts.training.build import build_model
 
 
 def _compute_loss(cfg, z1, z2, labels):

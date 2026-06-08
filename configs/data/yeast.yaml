@@ -1,0 +1,7 @@
+# @package _global_.data
+name: yeast
+n_features: 103
+n_labels: 14
+val_frac: 0.1
+test_frac: 0.2
+# Source: scikit-multilearn; per-label prevalence computed from train split (never from paper).

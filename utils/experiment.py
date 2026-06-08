@@ -18,7 +18,7 @@ from hydra import compose, initialize_config_dir
 from src.data.augment import two_views
 from src.metrics.geometry import alignment, effective_rank, uniformity
 from src.metrics.probe import linear_probe
-from src.training.loop import train_contrastive
+from scripts.training.loop import train_contrastive
 
 SEEDS = [42, 1337, 2024]
 DATASETS = ["yeast", "scene", "emotions", "mediamill", "bibtex"]

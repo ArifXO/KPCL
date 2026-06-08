@@ -43,7 +43,6 @@ pyproject.toml
 
 # ML checkpoints and generated arrays
 checkpoints/
-models/
 artifacts/
 *.ckpt
 *.pt
@@ -53,7 +52,6 @@ artifacts/
 *.npz
 
 # Downloaded/local datasets
-data/
 datasets/
 
 # Experiment tracking tools

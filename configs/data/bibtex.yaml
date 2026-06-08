@@ -1,0 +1,6 @@
+# @package _global_.data
+name: bibtex
+n_features: 1836
+n_labels: 159
+val_frac: 0.1
+test_frac: 0.2

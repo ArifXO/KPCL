@@ -10,7 +10,7 @@ features) and layer-2 input (= layer-1 output):
   - coverage   : mean partition-of-unity sum_c B_c(h)  (~1 in-range, ->0 saturated)
   - layer-2 spline-vs-base magnitude ratio ||spline|| / (||spline||+||base||)
 
-Saves runs/results/spec_h0/gridrange_diag.csv. Run: python -m scripts.diag_gridrange
+Saves runs/results/spec_h0/gridrange_diag.csv. Run: python -m scripts.smoke.diag_gridrange
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ import torch.nn.functional as F
 
 from src.data.loader import load_dataset
 from utils.experiment import DATASETS, set_seed, standard_cfg, subsample
-from src.training.loop import train_contrastive
+from scripts.training.loop import train_contrastive
 
 OUT = Path("runs/results/spec_h0")
 

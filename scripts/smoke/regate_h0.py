@@ -11,7 +11,7 @@ Two verdicts, both pre-registered threshold >=3/5:
   (A) KAN >= MLP       (original H0 question, fixed KAN)
   (B) KAN >= MLP+LN    (decisive control: KAN edge beyond normalisation)
 
-Reports as-is, not massaged. Run: python -m scripts.regate_h0
+Reports as-is, not massaged. Run: python -m scripts.smoke.regate_h0
 """
 from __future__ import annotations
 

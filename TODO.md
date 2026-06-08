@@ -45,9 +45,16 @@ Stages gate sequentially (R2). Do not start Stage N+1 before Stage N tests are g
 - [x] 1-seed yeast KAN baseline → runs/results/baseline_yeast/baseline.csv:
       InfoNCE 0.6907 / SupCon 0.6745 / DCL 0.6839 macro-AUROC (yeast = KAN's weakest set).
 
-## Stage 5 — Knot extraction S(x) + Jaccard w_ik (next; KANLayer.knot_indices already exists)
+## Stage 5 — Knot extraction S(x) + Jaccard w_ik — DONE
+- [x] src/models/knots.py: knot_code(module,h)->(B,O*I*(G+p)) detached binary (4*O*I ones);
+      jaccard_weight(S)->(B,B) in [0,1] (R9 assert, diag=1); smoothed_weight (exp(-beta*L1)).
+      MLP module raises NotImplementedError. Works on KANHead AND KANEncoder (canonical S(x)).
+- [x] tests/test_knots.py (8): identical→w=1, disjoint→w=0, 4*O*I ones, S&w no-grad, MLP raises.
+      73 tests green total.
 
-## Stage 6+ — KPCL (R3, R7, H1, H2)
+## Stage 6 — SPEC H1: knot-Jaccard FN-ranking AUC vs cos(z) (THE decision gate) — NEXT
+
+## Stage 7+ — KPCL (R3, R7, H1, H2)
 - [ ] `kpcl_loss`: knot-Jaccard w_ik (detached), w_ik=0 → InfoNCE exact (R3)
 - [ ] Unit tests: w_ik=0 allclose to InfoNCE; FN injection changes loss direction
 - [ ] H1 gate: FN-ranking AUC ≥ 0.55 & ≥ AUC_cos(z)+0.05 on ≥1/2 datasets

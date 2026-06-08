@@ -38,6 +38,16 @@ Rules: on "review"/"fix bugs"/"check the other agent", read BOTH files first. Do
 create ad-hoc *.md bug files. Newest entries at the bottom under a dated heading. Cite
 the source review in each reply. Deferrals must state a reason.
 
+
+---
+
+## Justified Deviations Documentation
+
+Two agents review this codebase — Codex and Claude Code — communicating through:
+- `Deviations_claude_code.md` — Claude code write the justified Deviations  it took while implementing .
+
+Rules: Write what was changed and what the justification behind it and how will it affect the archittecture.
+
 ---
 
 ## Coding Rules (bias to caution over speed; use judgment on trivial tasks)

@@ -21,7 +21,7 @@ def test_loss_imports():
 
 
 def test_metrics_imports():
-    from src.metrics.auroc import macro_auroc, fn_ranking_auc  # noqa: F401
+    from src.metrics.fn_ranking import fn_ranking_aucs, paired_bootstrap_p  # noqa: F401
 
 
 def test_train_imports():

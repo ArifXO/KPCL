@@ -21,7 +21,7 @@ import torch
 import torch.nn.functional as F
 
 from src.data.loader import load_dataset
-from utils.experiment import DATASETS, set_seed, standard_cfg, subsample
+from utils.experiment import DATASETS, pick_device, set_seed, standard_cfg, subsample
 from scripts.training.loop import train_contrastive
 
 OUT = Path("runs/results/spec_h0")
@@ -35,15 +35,16 @@ def _layer_stats(layer, h: torch.Tensor) -> tuple[float, float]:
 
 
 def run() -> None:
+    device = pick_device()
     rows = []
     for ds in DATASETS:
         cfg = standard_cfg(ds, "kan", 42, extra=["experiment.epochs=10"])
         set_seed(42)
         data = subsample(load_dataset(cfg), cfg.experiment.subsample_train, 42)
-        model, _ = train_contrastive(cfg, data, "cpu")
+        model, _ = train_contrastive(cfg, data, device)
         enc = model.encoder
         with torch.no_grad():
-            x = torch.as_tensor(data.X_train[:2000], dtype=torch.float32)
+            x = torch.as_tensor(data.X_train[:2000], dtype=torch.float32, device=device)
             l1, l2 = enc.layers[0], enc.layers[1]
             of1, cov1 = _layer_stats(l1, x)
             h1 = l1(x)

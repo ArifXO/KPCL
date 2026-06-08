@@ -9,15 +9,15 @@ Stages gate sequentially (R2). Do not start Stage N+1 before Stage N tests are g
 - [x] Directory layout + importable stubs
 - [x] Hydra config skeleton (configs/)
 - [x] BUG_codex.md, BUG_claude_code.md stubs
-- [ ] `git init` + first commit `[Stage0] scaffold — project skeleton`
+- [x] `git init` + first commit `[Stage0] scaffold — project skeleton`
 
 ## Stage 1 — Data Pipeline (R4, R5)
-- [ ] Implement `loader.load_dataset` for all 5 datasets (ARFF via liac-arff)
-- [ ] Iterative stratified multi-label split (scikit-multilearn)
-- [ ] Assert disjoint train/val/test index sets; raise ValueError on overlap
-- [ ] StandardScaler fit on train only; applied to val/test
-- [ ] Report per-label positive prevalence (from loader, never from paper)
-- [ ] Unit tests: disjoint splits, no-leakage, prevalence shape/range
+- [x] Implement `loader.load_dataset` for all 5 datasets (ARFF via liac-arff)
+- [x] Iterative stratified multi-label split (scikit-multilearn)
+- [x] Assert disjoint train/val/test index sets; raise ValueError on overlap
+- [x] StandardScaler fit on train only; applied to val/test
+- [x] Report per-label positive prevalence (from loader, never from paper)
+- [x] Unit tests: disjoint splits, no-leakage, prevalence shape/range
 
 ## Stage 2 — InfoNCE Baselines (R1, R2, R3, R7) [H0 gate]
 - [x] KAN building blocks: KANLayer (cubic B-spline + SiLU base), knot_indices readout
@@ -52,13 +52,37 @@ Stages gate sequentially (R2). Do not start Stage N+1 before Stage N tests are g
 - [x] tests/test_knots.py (8): identical→w=1, disjoint→w=0, 4*O*I ones, S&w no-grad, MLP raises.
       73 tests green total.
 
-## Stage 6 — SPEC H1: knot-Jaccard FN-ranking AUC vs cos(z) (THE decision gate) — NEXT
+## Stage 6 — SPEC H1: knot-Jaccard FN-ranking AUC vs cos(z) — DONE → **H1 PASS**
+- [x] src/metrics/fn_ranking.py (cos/knot/smoothed AUC, label-pair masks, paired bootstrap);
+      knot_code_compact in knots.py; tests/test_fn_ranking.py (5). 78 tests green.
+- [x] scripts/smoke/spec_h1.py: KAN+InfoNCE @100ep, 5 seeds, yeast+mediamill → runs/results/spec_h1/
+- [x] **H1 PASS:** mediamill knot 0.642 vs cos 0.513 (+0.129, p≈0, ≥0.55) clears all 3 conditions;
+      yeast no signal (knot≈cos, <0.55). → KPCL CONFIRMED, build it. (GPU; RTX 3060)
 
-## Stage 7+ — KPCL (R3, R7, H1, H2)
-- [ ] `kpcl_loss`: knot-Jaccard w_ik (detached), w_ik=0 → InfoNCE exact (R3)
-- [ ] Unit tests: w_ik=0 allclose to InfoNCE; FN injection changes loss direction
-- [ ] H1 gate: FN-ranking AUC ≥ 0.55 & ≥ AUC_cos(z)+0.05 on ≥1/2 datasets
-- [ ] H2 gate: full benchmark vs InfoNCE (+1.5 macro-AUROC) and DCL (+0.5)
+## Stage 7 — KPCL loss (H1 passed → GO) — DONE
+- [x] `kpcl_loss(z1,z2,w,tau,gamma)`: FNC-InfoNCE, negatives scaled by (1-w_ik)^gamma,
+      w_ik DETACHED; log-sum-exp NaN-safe. Loop dispatches kpcl (builds w from v1,v2 knot codes).
+- [x] tests/test_kpcl.py (10): R3 + FN-cancellation, gamma=0 & w=0 ≡ InfoNCE (allclose),
+      grad reaches encoder via z ONLY (w.grad/S.grad None), NaN-safe. 88 tests green.
+- [x] 1-seed yeast → runs/results/kpcl_yeast/kpcl.csv. KPCL≈InfoNCE (no yeast signal, as H1
+      predicted); best kpcl_g2 0.6921 vs DCL 0.6784 (+0.0137). Default gamma=2.
+      Real KPCL test = H2 sweep on mediamill/scene/emotions.
+
+## Stage 8 — KURC (knot-occupancy entropy regularizer) — DONE
+- [x] `kurc_loss(z1,z2,B,tau,lambda_occ,base_dict)`: L = base - lambda*H(q). q = SOFT
+      differentiable occupancy over head spline cells (partition of unity) — user-confirmed
+      real regularizer (H(q) carries gradient); hard S(x) stays detached (KPCL). clamp 1e-12.
+      under_kpcl flag composes L_KPCL - lambda*H. tests/test_kurc.py (7). 95 tests green.
+- [x] 1-seed yeast → runs/results/kurc_yeast/kurc.csv: KURC AUROC 0.6917 ≈ InfoNCE 0.6923
+      (Δ-0.0006); uniformity -3.561 vs -3.547 (Δ-0.015 nats, more uniform); eff_rank 50.4 vs
+      49.5 (less collapse). Regularizer active but lambda=0.1 mild on yeast (< H3's 0.1-nat).
+
+## Stage 9 — H2/H3 sweep (4 datasets × suite × 5 seeds, GPU) — NEXT
+- [ ] H2: KPCL beats InfoNCE +1.5 & DCL +0.5 macro-AUROC (mediamill/scene/emotions focus)
+- [ ] H3: KURC ≥ InfoNCE AUROC & uniformity +0.1 nats (may need larger lambda_occ)
+
+## Stage 8+ — KURC (always build) + H2/H3 sweep
+- [ ] kurc_loss (entropy reg); H2: KPCL vs InfoNCE(+1.5)/DCL(+0.5); H3: KURC vs InfoNCE
 
 ## Stage 4 — KURC Fallback (H3)
 - [ ] `kurc_loss` implementation + tests (entropy keys, q_c clamped at 1e-12)

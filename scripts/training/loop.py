@@ -13,19 +13,43 @@ import torch
 from src.data.augment import two_views
 from src.losses.dcl import dcl_loss
 from src.losses.infonce import info_nce_loss
+from src.losses.kpcl import kpcl_loss
+from src.losses.kurc import kurc_loss
 from src.losses.supcon import supcon_loss
+from src.models.heads import l2_normalize
+from src.models.knots import jaccard_weight, knot_code_compact
 from scripts.training.build import build_model
 
 
-def _compute_loss(cfg, z1, z2, labels):
+def _kpcl(cfg, model, v1, v2, z1, z2):
+    S = torch.cat([knot_code_compact(model.encoder, v1),   # detached encoder layer-0 S(x)
+                   knot_code_compact(model.encoder, v2)], dim=0)
+    return kpcl_loss(z1, z2, jaccard_weight(S), cfg.loss.temperature, cfg.loss.gamma)
+
+
+def _compute_loss(cfg, model, v1, v2, labels):
     t = cfg.loss.type
+    if t == "kurc":
+        # KURC reads soft occupancy at the head, so compute the encoder output explicitly
+        h1, h2 = model.encoder(v1), model.encoder(v2)
+        z1, z2 = l2_normalize(model.head(h1)), l2_normalize(model.head(h2))
+        hn = torch.cat([h1, h2], dim=0)
+        if model.head.norm is not None:        # the head's spline sees the pre-normed input
+            hn = model.head.norm(hn)
+        B = model.head.layer.b_splines(hn)     # (2N, I, G+p) DIFFERENTIABLE partition of unity
+        base = _kpcl(cfg, model, v1, v2, z1, z2) if cfg.loss.get("under_kpcl", False) else None
+        return kurc_loss(z1, z2, B, cfg.loss.temperature, cfg.loss.lambda_occ, base_dict=base)
+
+    z1, z2 = model(v1), model(v2)
     if t == "infonce":
         return info_nce_loss(z1, z2, cfg.loss.temperature)
     if t == "supcon":
         return supcon_loss(z1, z2, labels, cfg.loss.temperature)
     if t == "dcl":
         return dcl_loss(z1, z2, cfg.loss.temperature, cfg.loss.tau_plus)
-    raise ValueError(f"Unknown loss type '{t}'. Valid: ['infonce', 'supcon', 'dcl'].")
+    if t == "kpcl":
+        return _kpcl(cfg, model, v1, v2, z1, z2)
+    raise ValueError(f"Unknown loss type '{t}'. Valid: infonce/supcon/dcl/kpcl/kurc.")
 
 
 def train_contrastive(cfg, data, device) -> tuple:
@@ -56,7 +80,7 @@ def train_contrastive(cfg, data, device) -> tuple:
             if idx.numel() < 2:  # NT-Xent needs >=2 samples for negatives
                 continue
             v1, v2 = two_views(X[idx], cfg.aug)
-            out = _compute_loss(cfg, model(v1), model(v2), Y[idx])
+            out = _compute_loss(cfg, model, v1, v2, Y[idx])
             opt.zero_grad()
             out["loss"].backward()
             opt.step()

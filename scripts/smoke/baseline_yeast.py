@@ -15,13 +15,14 @@ import csv
 from pathlib import Path
 
 from src.data.loader import load_dataset
-from utils.experiment import one_run, set_seed, standard_cfg, subsample
+from utils.experiment import one_run, pick_device, set_seed, standard_cfg, subsample
 
 LOSSES = ["infonce", "supcon", "dcl"]
 OUT = Path("runs/results/baseline_yeast")
 
 
 def run() -> None:
+    device = pick_device()
     base = standard_cfg("yeast", "kan", 42)
     set_seed(42)
     data = subsample(load_dataset(base), base.experiment.subsample_train, 42)
@@ -29,7 +30,7 @@ def run() -> None:
     rows = []
     for loss in LOSSES:
         cfg = standard_cfg("yeast", "kan", 42, loss=loss)
-        r = one_run(cfg, data, "cpu")
+        r = one_run(cfg, data, device)
         rows.append({"loss": loss, "macro_auroc": round(r["macro_auroc"], 4),
                      "mAP": round(r["mAP"], 4), "final_loss": round(r["final_loss"], 4),
                      "params": r["params"], "secs": r["secs"]})

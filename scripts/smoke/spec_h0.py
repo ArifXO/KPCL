@@ -18,14 +18,15 @@ from pathlib import Path
 import numpy as np
 
 from src.data.loader import load_dataset
-from utils.experiment import DATASETS, SEEDS, one_run, set_seed, standard_cfg, subsample
+from utils.experiment import (DATASETS, SEEDS, one_run, pick_device, set_seed,
+                              standard_cfg, subsample)
 
 MODELS = ["kan", "mlp"]
 OUT = Path("runs/results/spec_h0")
 
 
 def run() -> None:
-    device = "cpu"
+    device = pick_device()
     OUT.mkdir(parents=True, exist_ok=True)
     rows: list[dict] = []
     for dataset in DATASETS:

@@ -1,5 +1,7 @@
 # @package _global_.loss
 type: kpcl
-temperature: 0.07
-# gamma: interpolation weight between InfoNCE and KPCL FN-correction term
-gamma: 0.5
+temperature: 0.2
+# gamma: FIXED (not learned) exponent on (1-w_ik) that down-weights false-negative
+# negatives. gamma=0 recovers InfoNCE exactly; higher = more aggressive FN cancellation.
+# Sweep {1, 2, 4}; default 2 (moderate).
+gamma: 2.0

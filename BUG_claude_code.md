@@ -109,3 +109,30 @@ many-label sets** (mediamill 101, bibtex 159: KAN−(MLP+LN) = +0.027, +0.050). 
 variant-A win was a normalisation effect (flips once MLP gets LN); yeast the KAN loses
 outright. **H0 premise now holds** → unblocks Stage 4/KPCL, with the honest caveat that
 the KAN advantage concentrates on high-label-cardinality data. Not massaged.
+
+## 2026-06-08 — GATE H1 verdict (Stage 6 spec experiment) — BINDING, decides KPCL vs KURC
+
+**Result: H1 PASS.** Knot-Jaccard FN-ranking AUC vs cos(z), KAN+InfoNCE @100 epochs, 5
+seeds [42,1337,2024,7,9001], on yeast + mediamill val sets. Now on GPU (RTX 3060).
+Artifacts: `runs/results/spec_h1/{h1.csv,h1_verdict.md,run.log}`.
+
+| dataset | AUC_cos | AUC_knot | knot−cos | boot p | ≥0.55 | +0.05 | p<0.05 | PASS |
+|---|---|---|---|---|---|---|---|---|
+| yeast | 0.5305±0.0035 | 0.5340±0.0052 | +0.0035 | 0.137 | N | N | N | no |
+| mediamill | 0.5132±0.0052 | 0.6419±0.0015 | +0.1286 | 0.000 | Y | Y | Y | **YES** |
+
+Pre-registered gate (PASS iff all 3 on ≥1 dataset) → **mediamill clears all three** decisively
+and consistently (per-seed knot 0.639–0.644 vs cos 0.506–0.522; n_pos ≈ 1.1M pairs/seed).
+yeast shows no signal (knot≈cos, both <0.55) — same pattern as H0: the KAN/knot advantage
+concentrates on high-label-cardinality data (mediamill 101 labels vs yeast 14).
+
+**→ KPCL is NOT falsified. Proceed to build KPCL (Stage 7).** Reported as-is, not tuned to pass.
+
+Notes:
+- knot-Jaccard and the smoothed knot weight gave identical AUC every seed. Not a bug: in the
+  in-grid regime, knot-Jaccard = (4F − L1)/(4F + L1) is a monotone transform of the L1 over
+  interval indices the smoothed weight uses, so they are rank-equivalent here.
+- Efficiency: used `knot_code_compact` (O-collapsed code) for w_ik — the full O-replicated
+  knot_code would be ~2 GB for mediamill's val set; Jaccard is O-invariant so identical result.
+- H0 encoders (25-epoch) were not persisted, so H1 retrained KAN+InfoNCE at 100 epochs per the
+  protocol's "epoch ≥ 100" — documented in Deviations (see D6.1).

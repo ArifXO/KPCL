@@ -56,6 +56,24 @@ def knot_code(module, h: Tensor) -> Tensor:
 
 
 @torch.no_grad()
+def knot_code_compact(module, h: Tensor) -> Tensor:
+    """Per-feature binary code (B, I*(G+p)) — the O-collapsed form of knot_code.
+
+    Jaccard is invariant to knot_code's O-fold replication (numerator and denominator
+    both scale by O), so jaccard_weight(knot_code_compact(...)) equals
+    jaccard_weight(knot_code(...)) at O-times lower memory/compute. Use this for w_ik on
+    large batches (e.g. full val sets). MLP module raises NotImplementedError (R9).
+    """
+    idx = module.knot_indices(h)               # (B, I, p+1); raises for MLP
+    layer = _spline_layer(module)
+    i = layer.in_features
+    n_basis = layer.grid_size + layer.spline_order
+    code = torch.zeros(h.shape[0], i, n_basis, dtype=torch.float32, device=h.device)
+    code.scatter_(2, idx, 1.0)
+    return code.reshape(h.shape[0], i * n_basis).detach()
+
+
+@torch.no_grad()
 def jaccard_weight(S: Tensor) -> Tensor:
     """w_ik = |S_i ∩ S_k| / |S_i ∪ S_k| in [0,1] for binary S (B, M).
 

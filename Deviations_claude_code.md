@@ -144,3 +144,86 @@ encoder for KPCL. (src/models/knots.py)
 Followed the spec shape and the `4*O*I`-ones test exactly, though Jaccard is provably invariant
 to the O-fold replication (numerator and denominator both scale by O). Noted that a caller may
 compute `w` on the compact `(B, I*(G+p))` per-feature code for speed. (src/models/knots.py)
+
+---
+
+## 2026-06-08 — Stage 6 (SPEC H1)
+
+**D6.1 — Retrained KAN+InfoNCE encoders for H1 instead of reusing H0's.**
+Protocol: "take the KAN+InfoNCE encoders from H0 ... at epoch >= 100." H0 trained at 25
+epochs (CPU-bounded) and did not persist model checkpoints, so there were no encoders to
+reuse. Did: retrain the same KAN+InfoNCE recipe to 100 epochs (now on GPU), 5 seeds, on
+yeast and mediamill, then compute FN-ranking. Why: the literal "from H0" object doesn't
+exist on disk; the protocol's binding requirement is "epoch ≥ 100", which is met.
+(configs/experiment/spec_h1.yaml; scripts/smoke/spec_h1.py)
+
+**D6.2 — FN-ranking uses `knot_code_compact` (O-collapsed code), not the full `knot_code`.**
+fn_ranking computes w_ik via the compact per-feature code. Why: the spec'd O-replicated
+`knot_code` is ~2 GB for mediamill's 4.4k-row val set (128× redundant); Jaccard is provably
+invariant to the O-replication, so the compact code gives the identical w_ik at 128× lower
+cost. (src/models/knots.py knot_code_compact; src/metrics/fn_ranking.py)
+
+**D6.3 — Val set capped at `max_val=5000` rows for the O(N^2) pair metric.**
+Not specified. The FN-ranking AUC is over all pairs; for very large val sets this is
+capped (deterministic per seed) to bound memory/time. With max_val=5000 neither yeast
+(~250 val) nor mediamill (~4.4k val) is actually capped, so the H1 numbers use the full
+val set. (src/metrics/fn_ranking.py)
+
+**D6.4 — Paired bootstrap is over the 5 seed-level AUC pairs.**
+"Paired bootstrap p < 0.05 over 5 seeds": implemented as a one-sided paired bootstrap that
+resamples the 5 per-seed (AUC_knot, AUC_cos) pairs with replacement and reports
+P(mean(knot−cos) ≤ 0). Pairing is by seed/encoder. (src/metrics/fn_ranking.py
+paired_bootstrap_p)
+
+---
+
+## 2026-06-08 — Stage 7 (KPCL loss)
+
+**D7.1 — `kpcl_loss(z1, z2, w, temperature, gamma)` signature (pass the detached weight matrix).**
+Stage-0 stub was `kpcl_loss(z, labels, knot_codes, cfg)`. Did: take two views and the
+pre-built (2N,2N) DETACHED knot-Jaccard `w`; the training loop computes
+`w = jaccard_weight(cat([knot_code_compact(enc,v1), knot_code_compact(enc,v2)]))`. Why:
+passing `w` keeps the loss self-contained and makes the exact-InfoNCE-recovery (w=0 / gamma=0)
+and gradient-isolation tests clean; explicit tau/gamma are more testable (loop reads them
+from cfg). w is re-detached inside the loss as a defensive guarantee (R5/pitfall 6).
+(src/losses/kpcl.py; scripts/training/loop.py)
+
+**D7.2 — gamma chosen = 2 (moderate), but yeast cannot truly discriminate gamma.**
+Task: "state the gamma chosen and why." Swept {1,2,4} on 1-seed yeast: 0.6918 / 0.6921 /
+0.6896. Chose gamma=2 (best here; gamma=4 over-cancels slightly). BUT per SPEC H1 yeast has
+no knot signal, so all gammas are ~InfoNCE-equivalent on yeast (spread ~0.002, within noise)
+— the choice is not real tuning of the KPCL effect. gamma=2 is carried as the moderate
+default into the H2 sweep (mediamill/scene/emotions), where the actual signal lives and gamma
+should be confirmed. (configs/loss/kpcl.yaml; runs/results/kpcl_yeast/kpcl.csv)
+
+**D7.3 — yeast KPCL table uses the spec_h0 (25-epoch) tier.**
+Matches the Stage-4 baseline_yeast table so InfoNCE/SupCon/DCL are directly comparable; all 6
+methods share the identical config and seed-42 init. (scripts/smoke/kpcl_yeast.py)
+
+---
+
+## 2026-06-08 — Stage 8 (KURC)
+
+**D8.1 — KURC uses a SOFT, DIFFERENTIABLE occupancy q (user-confirmed), not a detached q.**
+The task said "q is detached (structural)" with a test "q carries no gradient" — but with a
+detached q, H(q) is a constant and `L_InfoNCE - lambda*H(q)` has the EXACT same gradients as
+InfoNCE (a no-op regularizer that could never pass H3 / improve uniformity), contradicting
+Explainer §5 ("encourages samples to spread across spline pieces"). I surfaced this fork and
+the user chose the soft version. Did: q_c = batch-mean of the partition-of-unity B-spline
+activations B_c(h) over the head's edges (differentiable); H(q) carries gradient and actually
+spreads knot usage. The HARD discrete S(x) used by KPCL stays detached (unchanged). Tested:
+H(q) is differentiable + lambda>0 propagates gradient to the activations; lambda=0 ≡ InfoNCE.
+(src/losses/kurc.py; scripts/training/loop.py; AskUserQuestion 2026-06-08)
+
+**D8.2 — `kurc_loss(z1, z2, B, temperature, lambda_occ, base_dict=None)` signature.**
+Stage-0 stub was `kurc_loss(z, labels, cfg)`. Did: take two views + the SOFT head activations
+B (N,I,G+p) + an optional base loss dict (None -> InfoNCE base; pass a KPCL dict -> compose
+"KURC under KPCL", L = L_KPCL - lambda*H). The loop builds B from the head's b_splines on the
+(pre-normed) encoder output. Why: keeps the loss self-contained/testable and makes the
+under-KPCL composition a one-arg switch. (src/losses/kurc.py)
+
+**D8.3 — Occupancy read at the HEAD edges (Explainer §6.4), on the pre-normed head input.**
+The head applies a parameter-free pre-norm before its spline, so B is computed on
+head.norm(h) to match the activations the head actually uses (forward-consistent). The KPCL
+S(x) remains the encoder layer-0 code (per earlier stages) — KURC and KPCL read different
+layers by design. (scripts/training/loop.py)

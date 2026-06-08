@@ -24,10 +24,25 @@ SEEDS = [42, 1337, 2024]
 DATASETS = ["yeast", "scene", "emotions", "mediamill", "bibtex"]
 
 
+def pick_device() -> str:
+    """Select the compute device: CUDA GPU when available, else CPU (with a loud note).
+
+    Experiments are intended to run on the GPU; a CPU fallback is surfaced explicitly
+    rather than silently (R9), so a missing/un-built CUDA is never hidden.
+    """
+    if torch.cuda.is_available():
+        dev = f"cuda  ({torch.cuda.get_device_name(0)})"
+        print(f"[device] running on {dev}", flush=True)
+        return "cuda"
+    print("[device] WARNING: CUDA not available — falling back to CPU", flush=True)
+    return "cpu"
+
+
 def set_seed(s: int) -> None:
     random.seed(s)
     np.random.seed(s)
     torch.manual_seed(s)
+    torch.cuda.manual_seed_all(s)
 
 
 def standard_cfg(data: str, model: str, seed: int, loss: str = "infonce",

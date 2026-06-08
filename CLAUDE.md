@@ -50,6 +50,23 @@ Rules: Write what was changed and what the justification behind it and how will 
 
 ---
 
+## Experiment Result Reporting
+
+Claude Code records experiment outcomes in:
+- `result_report.md` - living analytical results and hypothesis report. After every
+  experiment or gate-relevant diagnostic, Claude Code must update the relevant
+  section of this report from the raw artifacts under `runs/results/...`.
+
+Rules: `runs/results/.../*.csv` and verdict files are the source of truth; report
+numbers as-is, not massaged. Update the report's "Last updated" line, artifact paths,
+gate status table, decision-relevant metrics, and Claude Code interpretation. Preserve
+failed attempts and contradictory evidence when scientifically relevant; do not rewrite
+history to make later results look cleaner. If there is no git repo or commit hash,
+state that explicitly. Smoke runs are pipeline checks only and must not be presented
+as thesis evidence.
+
+---
+
 ## Coding Rules (bias to caution over speed; use judgment on trivial tasks)
 
 ### 1. Think Before Coding

@@ -1,5 +1,10 @@
 # @package _global_.loss
 type: kurc
-temperature: 0.07
-# lambda_occ: weight on cluster-occupancy entropy regulariser
+temperature: 0.2
+# lambda_occ: weight on the knot-occupancy entropy bonus. L = L_base - lambda_occ * H(q).
+# lambda_occ=0 recovers the base loss exactly. q is the SOFT (differentiable) occupancy
+# over the head's spline cells, so H(q) actually spreads knot usage (Explainer §5).
 lambda_occ: 0.1
+# under_kpcl: if true the base is KPCL (L = L_KPCL - lambda_occ*H); else InfoNCE.
+under_kpcl: false
+gamma: 2.0   # KPCL exponent, used only when under_kpcl=true

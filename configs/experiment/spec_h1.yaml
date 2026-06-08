@@ -1,0 +1,10 @@
+# @package _global_.experiment
+# SPEC H1 (decision-grade): train KAN+InfoNCE encoders to epoch >= 100 (GPU), 5 seeds,
+# then measure FN-ranking AUC of knot-Jaccard vs cos(z) on the val set.
+is_smoke: false
+epochs: 100
+batch_size: 256
+max_steps_per_epoch: null   # no cap — full epochs
+subsample_train: 4000       # same train recipe as H0
+probe_epochs: 150           # unused by H1 (no probe), kept for cfg consistency
+probe_lr: 0.01

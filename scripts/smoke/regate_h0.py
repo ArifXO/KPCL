@@ -21,13 +21,15 @@ from pathlib import Path
 import numpy as np
 
 from src.data.loader import load_dataset
-from utils.experiment import DATASETS, SEEDS, one_run, set_seed, standard_cfg, subsample
+from utils.experiment import (DATASETS, SEEDS, one_run, pick_device, set_seed,
+                              standard_cfg, subsample)
 
 MODELS = ["kan", "mlp", "mlp_ln"]
 OUT = Path("runs/results/spec_h0")
 
 
 def run() -> None:
+    device = pick_device()
     rows: list[dict] = []
     for ds in DATASETS:
         for seed in SEEDS:
@@ -36,7 +38,7 @@ def run() -> None:
             data = subsample(load_dataset(base), base.experiment.subsample_train, seed)
             for model in MODELS:
                 cfg = standard_cfg(ds, model, seed)
-                r = one_run(cfg, data, "cpu")
+                r = one_run(cfg, data, device)
                 rows.append({"dataset": ds, "model": model, "seed": seed, **r})
                 print(f"{ds:10s} {model:6s} seed={seed} AUROC={r['macro_auroc']:.4f} "
                       f"mAP={r['mAP']:.4f} params={r['params']} {r['secs']}s", flush=True)
